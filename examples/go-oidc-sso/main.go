@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -144,7 +147,47 @@ func (a *app) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+func handleLogout(w http.ResponseWriter, r *http.Request, cfg Config) {
+	// 1. Load session (may be nil if user already logged out)
+	sess, _ := getSession(r, cfg)
+
+	// 2. Extract ID Token for id_token_hint
+	var idToken string
+	if sess != nil {
+		idToken = sess.IDToken
+	}
+
+	// 3. Clear local session
+	clearSession(w)
+
+	// 4. Build OP logout URL
+	q := url.Values{}
+	if idToken != "" {
+		q.Set("id_token_hint", idToken)
+	}
+	q.Set("post_logout_redirect_uri", cfg.PostLogoutRedirectURI)
+
+	// Optional: state for CSRF protection
+	state := generateRandomString(16)
+	q.Set("state", state)
+
+	logoutURL := cfg.LogoutEndpoint + "?" + q.Encode()
+
+	// 5. Redirect user to the OP logout endpoint
+	http.Redirect(w, r, logoutURL, http.StatusFound)
+}
+
+func generateRandomString(n int) string {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
 func (a *app) logoutHandler(w http.ResponseWriter, r *http.Request) {
+
 	clearSession(w)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
