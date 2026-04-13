@@ -4,10 +4,14 @@ import "sync"
 
 // Client represents a client application that can request authorization from the authorization server.
 type Client struct {
-	ID            string
-	Secret        string
-	AllowedScopes []string
-	AllowedClaims []string
+	ID                      string   `json:"id"`
+	Secret                  string   `json:"secret"`
+	RedirectURIs            []string `json:"redirect_uris"`
+	AllowedScopes           []string `json:"allowed_scopes"`
+	AllowedClaims           []string `json:"allowed_claims"`
+	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method"`
+	GrantTypes              []string `json:"grant_types"`
+	RequirePKCE             bool     `json:"require_pkce"`
 }
 
 // IsValid checks if the client has a valid ID and secret.
@@ -20,6 +24,7 @@ type ClientStoreInterface interface {
 	AddClient(client Client)
 	GetClient(id string) (Client, bool)
 	ValidateClient(id, secret string) bool
+	ListClients() []Client
 }
 
 // ClientStore is an in-memory store for managing clients in the authorization server.
@@ -33,6 +38,17 @@ func NewClientStore() *ClientStore {
 	return &ClientStore{
 		clients: make(map[string]Client),
 	}
+}
+
+// ListClients returns a list of all clients in the store.
+func (s *ClientStore) ListClients() []Client {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	clients := make([]Client, 0, len(s.clients))
+	for _, client := range s.clients {
+		clients = append(clients, client)
+	}
+	return clients
 }
 
 // AddClient adds a new client to the store.

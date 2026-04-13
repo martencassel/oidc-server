@@ -9,12 +9,24 @@ import (
 	"github.com/martencassel/oidc-server/internal/users"
 )
 
-type Handler struct {
+type LoginHandler struct {
 	userStore    users.UserStore
 	sessionStore *session.Store
 }
 
-func (h *Handler) LoginGET(c *gin.Context) {
+func NewLoginHandler(userStore users.UserStore, sessionStore *session.Store) *LoginHandler {
+	return &LoginHandler{
+		userStore:    userStore,
+		sessionStore: sessionStore,
+	}
+}
+
+func (h *LoginHandler) RegisterRoutes(r *gin.Engine) {
+	r.GET("/login", h.LoginGET)
+	r.POST("/login", h.LoginPOST)
+}
+
+func (h *LoginHandler) LoginGET(c *gin.Context) {
 	// The authorize endpoint will redirect here with ?return_to=/oauth2/authorize&client_id=...
 	returnTo := c.Query("return_to")
 
@@ -23,7 +35,7 @@ func (h *Handler) LoginGET(c *gin.Context) {
 	})
 }
 
-func (h *Handler) LoginPOST(c *gin.Context) {
+func (h *LoginHandler) LoginPOST(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	returnTo := c.PostForm("return_to")

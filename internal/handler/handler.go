@@ -182,7 +182,7 @@ func (h *TokenHandler) HandlePostToken(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{
-		"access_token": "dummy_access_token",
+		"access_token": idToken,
 		"token_type":   "Bearer",
 		"expires_in":   3600,
 		"id_token":     idToken,

@@ -32,6 +32,11 @@ func NewInMemoryUserStore() *InMemoryUserStore {
 		users: make(map[string]User),
 	}
 }
+func (s *InMemoryUserStore) AddUser(user User) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.users[user.Subject] = user
+}
 
 func (s *InMemoryUserStore) Authenticate(username, password string) (User, bool) {
 
@@ -59,12 +64,6 @@ func (s *InMemoryUserStore) GetUserBySubject(sub string) (User, bool) {
 	defer s.mu.RUnlock()
 	user, exists := s.users[sub]
 	return user, exists
-}
-
-func (s *InMemoryUserStore) AddUser(user User) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.users[user.Subject] = user
 }
 
 func (s *InMemoryUserStore) Clear() {
