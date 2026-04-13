@@ -2,7 +2,7 @@ tidy:
 	go mod tidy
 
 build: tidy
-	go build 
+	go build -o ./bin/
 
 run: tidy
 	go run .
