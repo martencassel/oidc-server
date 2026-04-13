@@ -1,5 +1,5 @@
 build:
-	go build
+	go build -o ./bin/
 
 tidy:
 	go mod tidy
