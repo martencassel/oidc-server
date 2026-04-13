@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -46,38 +44,25 @@ type LoggingTransport struct {
 func (t LoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	start := time.Now()
 
-	// REQUEST
-	log.Printf("%s%s→ REQUEST%s", cBlue, cBold, cReset)
-	log.Printf("%s%s %s%s", cBlue, req.Method, req.URL.String(), cReset)
-	log.Printf("%sHeaders:%s\n%s", cBlue, cReset, formatHeaders(req.Header))
+	// Clone request so we don't mutate the original
+	r2 := req.Clone(req.Context())
 
-	res, err := t.Base.RoundTrip(req)
+	// Log request
+	log.Printf("%s%s→ REQUEST%s", cBlue, cBold, cReset)
+	log.Printf("%s%s %s%s", cBlue, r2.Method, r2.URL.String(), cReset)
+	log.Printf("%sHeaders:%s\n%s", cBlue, cReset, formatHeaders(r2.Header))
+
+	// Perform request
+	res, err := t.Base.RoundTrip(r2)
 	if err != nil {
 		log.Printf("%s%s← ERROR%s %v (%s)", cRed, cBold, cReset, err, time.Since(start))
 		return nil, err
 	}
 
-	// RESPONSE
+	// Log response
 	log.Printf("%s%s← RESPONSE%s", cGreen, cBold, cReset)
 	log.Printf("%s%d %s%s (%s)", cGreen, res.StatusCode, http.StatusText(res.StatusCode), cReset, time.Since(start))
 	log.Printf("%sHeaders:%s\n%s", cGreen, cReset, formatHeaders(res.Header))
-
-	// BODY (pretty JSON if applicable)
-	ct := res.Header.Get("Content-Type")
-	if strings.Contains(ct, "application/json") {
-		bodyBytes, _ := ioutil.ReadAll(res.Body)
-		res.Body.Close()
-
-		pretty, err := prettyColorJSON(bodyBytes)
-		if err != nil {
-			log.Printf("%s[raw body]%s\n%s", cYellow, cReset, string(bodyBytes))
-		} else {
-			log.Printf("%sJSON Body:%s\n%s", cYellow, cReset, pretty)
-		}
-
-		// restore body for caller
-		res.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	}
 
 	return res, nil
 }

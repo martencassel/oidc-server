@@ -4,8 +4,10 @@ import "sync"
 
 // Client represents a client application that can request authorization from the authorization server.
 type Client struct {
-	ID     string
-	Secret string
+	ID            string
+	Secret        string
+	AllowedScopes []string
+	AllowedClaims []string
 }
 
 // IsValid checks if the client has a valid ID and secret.

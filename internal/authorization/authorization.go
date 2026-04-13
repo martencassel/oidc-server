@@ -10,6 +10,7 @@ import (
 type AuthorizationCode struct {
 	Code      string
 	State     string
+	Subject   string
 	IssuedAt  time.Time
 	ExpiresIn time.Duration
 }
@@ -36,7 +37,7 @@ func (c AuthorizationCode) IsExpired() bool {
 
 // AuthorizationCodeStoreInterface defines the methods for managing authorization codes.
 type AuthorizationCodeStoreInterface interface {
-	AddCode(state string) string
+	AddCode(state string, subject string) string
 	GetCode(code string) (AuthorizationCode, bool)
 	ValidateCode(code, state string) bool
 	ClearExpiredCodes()
@@ -87,12 +88,13 @@ func (s *AuthorizationCodeStore) RemoveCode(code string) {
 }
 
 // AddCode generates a new authorization code for the given state and stores it in the store.
-func (s *AuthorizationCodeStore) AddCode(state string) string {
+func (s *AuthorizationCodeStore) AddCode(state string, subject string) string {
 	code := GenerateAuthorizationCode()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.codes[code] = AuthorizationCode{
 		Code:      code,
+		Subject:   subject,
 		State:     state,
 		IssuedAt:  time.Now(),
 		ExpiresIn: 5 * time.Minute,
@@ -114,5 +116,9 @@ func (s *AuthorizationCodeStore) ValidateCode(code, state string) bool {
 	if !exists {
 		return false
 	}
-	return authCode.State == state
+	// State is optional - if provided, it must match the state associated with the code
+	if state != "" {
+		return authCode.State == state
+	}
+	return true
 }
