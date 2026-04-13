@@ -6,6 +6,7 @@ import (
 	"github.com/martencassel/oidc-server/internal/client"
 	"github.com/martencassel/oidc-server/internal/config"
 	"github.com/martencassel/oidc-server/internal/tokens"
+	log "github.com/sirupsen/logrus"
 )
 
 // TokenHandler handles the token exchange process for the OIDC server
@@ -29,6 +30,9 @@ func RegisterRoutes(r *gin.Engine, tokenHandler *TokenHandler) {
 	r.GET("/.well-known/openid-configuration", func(c *gin.Context) {
 		tokenHandler.HandleOidcDiscovery(c)
 	})
+	r.GET("/oauth2/authorize", func(c *gin.Context) {
+		tokenHandler.HandleAuthorize(c)
+	})
 	r.GET("/oauth2/token", func(c *gin.Context) {
 		tokenHandler.HandleGetToken(c)
 	})
@@ -49,6 +53,23 @@ func (h *TokenHandler) HandleOidcDiscovery(c *gin.Context) {
 	})
 }
 
+// HandleAuthorize handles the authorization request
+func (h *TokenHandler) HandleAuthorize(c *gin.Context) {
+	var authReq authorization.AuthorizationRequest
+	err := c.ShouldBindQuery(&authReq)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": "invalid_request",
+		})
+		return
+	}
+	log.Infof("Received authorization request: %+v", authReq)
+
+	c.JSON(200, gin.H{
+		"message": "authorization endpoint - in a real implementation, this would handle the authorization request and redirect the user to the login page",
+	})
+}
+
 // HandleGetToken handles the authorization code request
 func (h *TokenHandler) HandleGetToken(c *gin.Context) {
 	var authReq authorization.AuthorizationRequest
@@ -59,6 +80,7 @@ func (h *TokenHandler) HandleGetToken(c *gin.Context) {
 		})
 		return
 	}
+	log.Infof("Received authorization request: %+v", authReq)
 	if authReq.ResponseType != "code" {
 		c.JSON(400, gin.H{
 			"error": "unsupported_response_type",

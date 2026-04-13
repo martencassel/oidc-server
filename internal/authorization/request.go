@@ -8,10 +8,12 @@ import (
 
 // AuthorizationRequest represents an authorization request sent by a client application to the authorization server.
 type AuthorizationRequest struct {
-	ResponseType string `form:"response_type" binding:"required"`
+	AccessType   string `form:"access_type"`
 	ClientID     string `form:"client_id" binding:"required"`
+	RedirectURI  string `form:"redirect_uri" binding:"required"`
+	ResponseType string `form:"response_type" binding:"required"`
+	Scope        string `form:"scope"`
 	State        string `form:"state" binding:"required"`
-	RedirectURI  string `form:"redirect_uri" binding:"required,url"`
 }
 
 // IsValid checks if the authorization request has all required fields and valid response type.

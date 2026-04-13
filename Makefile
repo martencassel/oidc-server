@@ -4,3 +4,4 @@ tidy:
 
 run: tidy
 	go run .
+
